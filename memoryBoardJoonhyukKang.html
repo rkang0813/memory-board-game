@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<style>
+div#gameBoard{
+	background:cornflowerblue;
+	border:black 1px solid;
+	width:860px;
+	height:710px;
+	padding:12px;
+	margin:0px auto;
+}
+
+div#moves{
+    text-align:center;
+	font-weight:bold;
+	font-size:25px;
+	font-family:sans-serif;
+	color:cornflowerblue;
+}
+
+div.hard{
+	background: no-repeat;
+	border:red 1px solid;
+	width:60px;
+	height:60px;
+	float:left;
+	margin:20px;
+	padding:20px;
+	font-size:55px;
+	font-family:sans-serif;
+	cursor:crosshair;
+	text-align:center;
+}
+div.med{
+	background: no-repeat;
+	border:black 1px solid;
+	width:60px;
+	height:60px;	
+	float:left;
+	margin:35px;
+	padding:20px;
+	font-size:55px;
+	font-family:sans-serif;
+	cursor:crosshair;
+	text-align:center;
+}
+div.easy{
+	background: no-repeat;
+	border:green 1px solid;
+	width:60px;
+	height:60px;
+	float:left;
+	margin:55px;
+	margin-top:140px;
+	padding:20px;
+	font-size:55px;
+	font-family:sans-serif;
+	cursor:crosshair;
+	text-align:center;
+}
+h2, p, button{
+    font-weight:bold;
+	font-family:sans-serif;
+}
+</style>
+<script>
+var cardArray = ['A','A','B','B','C','C','D','D','E','E','F','F','G','G','H','H','I','I','J','J','K','K','L','L','M','M','N','N','O','O'];
+var cardValues = [];
+var tileStorage = [];
+var tilesFlipped = 0;
+var numberOfMoves = 0;
+
+function Cards () { //class for cards
+  this.cardDeck = cardArray;
+}
+
+Array.prototype.randomOrder = function(){ //random array algorithm for card shuffle
+    var i = this.length, j, temp;
+    while(--i > 0){
+        j = Math.floor(Math.random() * (i+1));
+        temp = this[j];
+        this[j] = this[i];
+        this[i] = temp;
+    }
+}
+
+function newHardBoard(){
+	cardValues = [];
+    tileStorage = [];
+	tilesFlipped = 0;
+	numberOfMoves = 0;
+	var boardSize = "hard";
+	var output = '';
+	var cards = new Cards();
+	var cardArray_copy = cards.cardDeck.sort(); //sort deck
+	cardArray_copy.randomOrder(); //shuffle deck
+	
+	for(var i = 0; i < cardArray_copy.length; i++){ //adds a unique div for each card
+		output += '<div id="tile_'+i+'" style="visibility:hidden;" class="hard" onclick="turnFlip(this,\''+cardArray_copy[i]+'\',\''+boardSize+'\')"></div>';
+	}
+	
+	var regexp = /tile_/g;
+    var match = [];
+    var matches = [];
+    var result = [];
+    var i = 0;
+  
+    while ((match = regexp.exec(output)) != null) { //search for tile_i ID, which represents div for each card
+      matches.push(match[0]+i); //push tile_i element to matches array for all cards
+      i++;
+    }
+  
+    while(matches[0]) {
+      result.push(matches.splice(0,6)); //splice until none left, 6 cards per row
+    }
+    document.getElementById('gameBoard').innerHTML = output;
+	spiralOrder(result);
+	document.getElementById('hiddenDifficulty').innerHTML = boardSize; //indicates what difficulty the current board is via hidden div, which then can be accessed via DOM for later logic
+	document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+}
+
+function newMediumBoard(){
+	cardValues = [];
+    tileStorage = [];
+	tilesFlipped = 0;
+	numberOfMoves = 0;
+	var boardSize = "med";
+	var output = '';
+	var cards = new Cards();
+	var cardArray_copy = cards.cardDeck.sort(); //sort deck
+	var cardArray_sliced = cardArray_copy.slice(0, 20); //20 total cards for medium mode
+    cardArray_sliced.randomOrder();
+	for(var i = 0; i < 20; i++){
+		output += '<div id="tile_'+i+'" style="visibility:hidden;" class="med" onclick="turnFlip(this,\''+cardArray_sliced[i]+'\',\''+boardSize+'\')"></div>';
+	}
+	
+	var regexp = /tile_/g;
+    var match = [];
+    var matches = [];
+    var result = [];
+    var i = 0;
+  
+    while ((match = regexp.exec(output)) != null) {
+      matches.push(match[0]+i);
+      i++;
+    }
+  
+    while(matches[0]) {
+      result.push(matches.splice(0,5)); //5 cards per row
+    }
+    document.getElementById('gameBoard').innerHTML = output;
+	spiralOrder(result);
+	document.getElementById('hiddenDifficulty').innerHTML = boardSize;
+	document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+}
+
+function newEasyBoard(){
+	cardValues = [];
+    tileStorage = [];
+	tilesFlipped = 0;
+	numberOfMoves = 0;
+	var boardSize = "easy";
+	var output = '';
+	var cards = new Cards();
+	var cardArray_copy = cards.cardDeck.sort(); //sort deck
+	var cardArray_sliced = cardArray_copy.slice(0, 8); //8 total cards for easy mode
+    cardArray_sliced.randomOrder();
+	for(var i = 0; i < 8; i++){
+		output += '<div id="tile_'+i+'" style="visibility:hidden;" class="easy" onclick="turnFlip(this,\''+cardArray_sliced[i]+'\',\''+boardSize+'\')"></div>';
+	}
+	
+	var regexp = /tile_/g;
+    var match = [];
+    var matches = [];
+    var result = [];
+    var i = 0;
+  
+    while ((match = regexp.exec(output)) != null) {
+      matches.push(match[0]+i);
+      i++;
+    }
+  
+    while(matches[0]) {
+      result.push(matches.splice(0,4)); //4 cards per row
+    }
+    document.getElementById('gameBoard').innerHTML = output;
+	spiralOrder(result);
+	document.getElementById('hiddenDifficulty').innerHTML = boardSize;
+	document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+}
+
+function resetBoard() {
+	var size = document.getElementById('hiddenDifficulty').innerHTML; //retrieve current board difficulty value from hidden div
+	
+	//figure out which board needs to be reset
+	if(size == "hard"){
+	  var tiles = document.getElementsByClassName('hard');
+	  
+      //flip back all cards
+	  for(var i=0; i<tiles.length; i++)
+        {
+		  tiles[i].style.background = 'no-repeat';
+		  tiles[i].innerHTML = "";
+        }
+	  //reset all values for that particular board
+	  cardValues = []; 
+      tileStorage = [];
+	  tilesFlipped = 0;
+	  numberOfMoves = 0;
+	  document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+	}
+	if(size == "med"){
+	  var tiles = document.getElementsByClassName('med');
+
+	  for(var i=0; i<tiles.length; i++)
+        {
+		  tiles[i].style.background = 'no-repeat';
+		  tiles[i].innerHTML = "";
+        }
+	  cardValues = [];
+      tileStorage = [];
+	  tilesFlipped = 0;
+	  numberOfMoves = 0;
+	  document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+	}
+	if(size == "easy"){
+	  var tiles = document.getElementsByClassName('easy');
+
+	  for(var i=0; i<tiles.length; i++)
+        {
+		  tiles[i].style.background = 'no-repeat';
+		  tiles[i].innerHTML = "";
+        }
+	  cardValues = [];
+      tileStorage = [];
+	  tilesFlipped = 0;
+	  numberOfMoves = 0;
+	  document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+	}
+}
+
+function turnFlip(tile,val,boardSize){
+	if(tile.innerHTML == "" && cardValues.length < 2){
+		tile.style.background = '#FFF';
+		tile.innerHTML = val;
+		if(cardValues.length == 0){ //if first card is flipped
+			cardValues.push(val);
+			tileStorage.push(tile.id);
+		} else if(cardValues.length == 1){ //else if the second card is flipped
+		    numberOfMoves++; //count 1 full move
+			document.getElementById("moves").innerHTML = "# MOVES: "+numberOfMoves;
+			cardValues.push(val);
+			tileStorage.push(tile.id);
+			if(cardValues[0] == cardValues[1]){ //if both cards match
+				tilesFlipped += 2;
+				//clear arrays for next turn
+				cardValues = [];
+            	tileStorage = [];
+				
+				//if all cards matched, create new board
+				if(boardSize == "easy" && tilesFlipped == 8){
+					alert("All cards matched...give it another go!");
+					document.getElementById('gameBoard').innerHTML = "";
+					newEasyBoard();
+				}
+				if(boardSize == "med" && tilesFlipped == 20){
+					alert("All cards matched...give it another go!");
+					document.getElementById('gameBoard').innerHTML = "";
+					newMediumBoard();
+				}
+				if(boardSize == "hard" && tilesFlipped == cardArray.length){
+					alert("All cards matched...give it another go!");
+					document.getElementById('gameBoard').innerHTML = "";
+					newHardBoard();
+				}
+			} else {
+				function flipCardsBack(){
+				    //if no match, flip the two cards back over
+				    var card1 = document.getElementById(tileStorage[0]);
+				    var card2 = document.getElementById(tileStorage[1]);
+				    card1.style.background = 'no-repeat';
+            	    card1.innerHTML = "";
+				    card2.style.background = 'no-repeat';
+            	    card2.innerHTML = "";
+				    
+				    cardValues = [];
+            	    tileStorage = [];
+				}
+				setTimeout(flipCardsBack, 750);
+			}
+		}
+	}
+}
+	
+function spiralOrder(matrix) { //spiral algorithm
+  var i;
+  var nRows = matrix.length;
+  var nCols = matrix[0].length;
+  var rowLimit = nRows - 1;
+  var colLimit = nCols - 1;
+  var rounds = 0;
+  var printedElements = 0;
+  var nElements = nRows * nCols;
+  var timeoutLapse = 90;
+
+  function print(val) {
+    printedElements += 1;
+    setTimeout(function() {
+      document.getElementById(val).style.visibility = "visible"; //show each card one by one
+    }, printedElements * timeoutLapse);
+  }
+
+  do {
+    for (i = rounds; i <= colLimit - rounds; i += 1) { // from left to right
+	  print(matrix[rounds][i]);
+    }
+
+    for (i = rounds + 1; i <= rowLimit - rounds; i += 1) { // from top to bottom
+	  print(matrix[i][colLimit - rounds]);
+    }
+
+    for (i = colLimit - rounds - 1; i >= rounds; i -= 1) { // from right to left
+	  print(matrix[rowLimit - rounds][i]);
+    }
+
+    for (i = rowLimit - rounds - 1; i >= rounds + 1; i -= 1) { // from bottom to top
+	  print(matrix[i][rounds]);
+    }
+    rounds += 1;
+  } while (printedElements < nElements);
+
+}
+
+function lockButton() {
+
+    for(var i = 0; i < 3; i++)
+      document.getElementsByTagName("button")[i].setAttribute('disabled', true);
+
+      setTimeout(function(){
+	  for(var i = 0; i < 3; i++)
+        document.getElementsByTagName("button")[i].removeAttribute('disabled');
+      }, 2500)
+}
+
+</script>
+</head>
+<body>
+<h2 style="text-align:center;">MEMORY GAME</h2>
+<p>GAME CONTROLS:</p>
+<button id="easyButton" onclick="newEasyBoard(); lockButton();">EASY</button>
+<button id="medButton" onclick="newMediumBoard(); lockButton();">MEDIUM</button>
+<button id="hardButton" onclick="newHardBoard(); lockButton();">HARD</button>
+<button id="reset" onclick="resetBoard();">RESET</button>
+<hr>
+<div id="gameBoard"></div>
+<div id="moves"></div>
+<hr>
+<div id="hiddenDifficulty" style="display:none;"></div>
+</body>
+</html>
